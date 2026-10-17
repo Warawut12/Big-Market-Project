@@ -4,71 +4,38 @@ const checkAndExpirePassedBookings = async () => {
   try {
     const now = new Date();
     const todayStr = now.toISOString().split("T")[0];
+    const currentMinutes = now.getHours() * 60 + now.getMinutes();
 
-    // รายวัน  หมดอายุเมื่อเลยวันจอง
-    const { data: expiredDaily } = await supabase
+    // 1. รายวันที่หมดเวลาของวันจองแล้ว
+    const { data: approvedDaily } = await supabase
       .from("bookings")
-      .select("id, stall_id")
+      .select("id, stall_id, booking_date, time_end")
       .eq("status", "approved")
-      .eq("booking_type", "daily")
-      .lt("booking_date", todayStr);
+      .eq("booking_type", "daily");
 
-    if (expiredDaily && expiredDaily.length > 0) {
-      const expiredIds = expiredDaily.map((b) => b.id);
-      const stallIds = expiredDaily.map((b) => b.stall_id);
-
-      await supabase
-        .from("bookings")
-        .update({ status: "completed" })
-        .in("id", expiredIds);
-      await supabase
-        .from("stalls")
-        .update({ status: "available" })
-        .in("id", stallIds);
-    }
-
-    // ดึงรายการอนุมัติแล้วมาเช็ค รายสัปดาห์ (7 วัน) และ รายเดือน (ตามจำนวนวันจริงของเดือนนั้นๆ)
-    const { data: approvedBookings } = await supabase
-      .from("bookings")
-      .select("id, stall_id, booking_type, updated_at, created_at")
-      .eq("status", "approved");
-
-    if (approvedBookings && approvedBookings.length > 0) {
-      const completedWeeklyIds = [];
-      const completedMonthlyIds = [];
+    if (approvedDaily && approvedDaily.length > 0) {
+      const expiredDailyIds = [];
       const stallIdsToFree = [];
 
-      approvedBookings.forEach((b) => {
-        const approveTime = new Date(b.updated_at || b.created_at);
-        const diffTime = now - approveTime; // มิลลิวินาที
-
-        if (b.booking_type === "weekly") {
-          // ครบ 7 วัน (7 * 24 * 60 * 60 * 1000)
-          const sevenDaysMs = 7 * 24 * 60 * 60 * 1000;
-          if (diffTime >= sevenDaysMs) {
-            completedWeeklyIds.push(b.id);
-            stallIdsToFree.push(b.stall_id);
-          }
-        } else if (b.booking_type === "monthly") {
-          // คำนวณจำนวนวันตามเดือนจริงนับจากวันที่อนุมัติ (28, 29, 30 หรือ 31 วัน)
-          const year = approveTime.getFullYear();
-          const month = approveTime.getMonth() + 1;
-          const daysInMonth = new Date(year, month, 0).getDate();
-          const monthMs = daysInMonth * 24 * 60 * 60 * 1000;
-
-          if (diffTime >= monthMs) {
-            completedMonthlyIds.push(b.id);
+      approvedDaily.forEach((b) => {
+        if (b.booking_date < todayStr) {
+          expiredDailyIds.push(b.id);
+          stallIdsToFree.push(b.stall_id);
+        } else if (b.booking_date === todayStr && b.time_end) {
+          const [h, m] = b.time_end.split(":").map(Number);
+          const endMins = h * 60 + m;
+          if (currentMinutes >= endMins) {
+            expiredDailyIds.push(b.id);
             stallIdsToFree.push(b.stall_id);
           }
         }
       });
 
-      const allCompletedIds = [...completedWeeklyIds, ...completedMonthlyIds];
-      if (allCompletedIds.length > 0) {
+      if (expiredDailyIds.length > 0) {
         await supabase
           .from("bookings")
           .update({ status: "completed" })
-          .in("id", allCompletedIds);
+          .in("id", expiredDailyIds);
         await supabase
           .from("stalls")
           .update({ status: "available" })
@@ -76,7 +43,50 @@ const checkAndExpirePassedBookings = async () => {
       }
     }
 
-    // 3. QR Code ค้างรออนุมัติเกิน 24 ชม.
+    // 2. รายสัปดาห์ (7 วัน) และ รายเดือน
+    const { data: approvedBookings } = await supabase
+      .from("bookings")
+      .select("id, stall_id, booking_type, updated_at, created_at")
+      .eq("status", "approved")
+      .neq("booking_type", "daily");
+
+    if (approvedBookings && approvedBookings.length > 0) {
+      const completedIds = [];
+      const stallIdsToFree = [];
+
+      approvedBookings.forEach((b) => {
+        const approveTime = new Date(b.updated_at || b.created_at);
+        const diffTime = now - approveTime;
+
+        if (b.booking_type === "weekly") {
+          if (diffTime >= 7 * 24 * 60 * 60 * 1000) {
+            completedIds.push(b.id);
+            stallIdsToFree.push(b.stall_id);
+          }
+        } else if (b.booking_type === "monthly") {
+          const year = approveTime.getFullYear();
+          const month = approveTime.getMonth() + 1;
+          const daysInMonth = new Date(year, month, 0).getDate();
+          if (diffTime >= daysInMonth * 24 * 60 * 60 * 1000) {
+            completedIds.push(b.id);
+            stallIdsToFree.push(b.stall_id);
+          }
+        }
+      });
+
+      if (completedIds.length > 0) {
+        await supabase
+          .from("bookings")
+          .update({ status: "completed" })
+          .in("id", completedIds);
+        await supabase
+          .from("stalls")
+          .update({ status: "available" })
+          .in("id", [...new Set(stallIdsToFree)]);
+      }
+    }
+
+    // 3. QR Code ค้างเกิน 24 ชม.
     const twentyFourHoursAgo = new Date(
       Date.now() - 24 * 60 * 60 * 1000,
     ).toISOString();
@@ -240,7 +250,6 @@ exports.approveBooking = async (req, res) => {
     if (!bookingData)
       return res.status(404).json({ error: "ไม่พบข้อมูลการจอง" });
 
-    // บันทึกเวลาที่อนุมัติด้วย updated_at ผ่านการอัปเดตสถานะ
     await supabase.from("bookings").update({ status: "approved" }).eq("id", id);
     await supabase
       .from("stalls")
