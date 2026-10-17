@@ -114,38 +114,16 @@ const Status = () => {
 
   const { disabledDaysName } = getDisabledDaysForSelectedStall();
 
-  // 🟢 ฟังก์ชันเช็คชั่วโมงที่ถูกจองไปแล้วในวันที่/วันที่เลือก เพื่อนำมาปิดไม่ให้เลือกซ้ำ
+  // 🟢 ปรับปรุงใหม่: ดึงช่วงเวลาที่ถูกจองแล้วของล็อกนี้มาปิดไม่ให้เลือกทันที
   const getDisabledHours = () => {
     if (!selectedStall) return [];
 
-    const targetBookings = bookings.filter((b) => {
-      if (
-        b.stall_id !== selectedStall.id ||
-        (b.status !== "approved" && b.status !== "pending")
-      ) {
-        return false;
-      }
-
-      if (formData.booking_type === "daily" && b.booking_type === "daily") {
-        return b.booking_date === formData.booking_date;
-      }
-
-      if (
-        (formData.booking_type === "weekly" ||
-          formData.booking_type === "monthly") &&
-        (b.booking_type === "weekly" || b.booking_type === "monthly")
-      ) {
-        let bDays = Array.isArray(b.selected_days) ? b.selected_days : [];
-        if (typeof b.selected_days === "string") {
-          try {
-            bDays = JSON.parse(b.selected_days);
-          } catch (e) {}
-        }
-        return formData.selected_days.some((day) => bDays.includes(day));
-      }
-
-      return false;
-    });
+    // ดึงการจองทั้งหมดที่อนุมัติแล้วหรือรออนุมัติของล็อกนี้
+    const targetBookings = bookings.filter(
+      (b) =>
+        b.stall_id === selectedStall.id &&
+        (b.status === "approved" || b.status === "pending"),
+    );
 
     const occupiedHours = new Set();
     targetBookings.forEach((b) => {
