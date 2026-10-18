@@ -332,6 +332,36 @@ const Status = () => {
     }
   };
 
+  // 🟢 ฟังก์ชันสำหรับแปลง QR Code SVG เป็นรูปภาพ PNG แล้วดาวน์โหลดลงเครื่อง
+  const downloadQR = () => {
+    if (!qrRef.current) return;
+    const svgElement = qrRef.current.querySelector("svg");
+    if (!svgElement) return;
+
+    const svgData = new XMLSerializer().serializeToString(svgElement);
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d");
+    const img = new Image();
+
+    img.onload = () => {
+      canvas.width = img.width;
+      canvas.height = img.height;
+      ctx.drawImage(img, 0, 0);
+      const pngFile = canvas.toDataURL("image/png");
+
+      const downloadLink = document.createElement("a");
+      downloadLink.href = pngFile;
+      downloadLink.download = `QR_Booking_${createdBookingId || "stall"}.png`;
+      document.body.appendChild(downloadLink);
+      downloadLink.click();
+      document.body.removeChild(downloadLink);
+    };
+
+    img.src =
+      "data:image/svg+xml;base64," +
+      btoa(unescape(encodeURIComponent(svgData)));
+  };
+
   const translateDays = (days) => {
     const map = {
       Monday: "วันจันทร์",
@@ -855,7 +885,16 @@ const Status = () => {
                 size={180}
               />
             </div>
+
+            {/* 🟢 เพิ่มปุ่มดาวน์โหลด QR Code กลับเข้ามาตรงนี้ */}
             <div className="flex flex-col gap-2">
+              <button
+                type="button"
+                onClick={downloadQR}
+                className="w-full bg-orange-600 hover:bg-orange-700 text-white py-2.5 rounded-xl font-medium text-sm shadow transition flex items-center justify-center gap-2"
+              >
+                <span>💾</span> บันทึก QR Code ลงเครื่อง
+              </button>
               <button
                 type="button"
                 onClick={() => {
