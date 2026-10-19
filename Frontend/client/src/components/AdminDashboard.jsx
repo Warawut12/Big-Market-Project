@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
+import API from "../utils/axios";
 
 export default function AdminDashboard() {
   const [bookings, setBookings] = useState([]);
@@ -43,9 +44,9 @@ export default function AdminDashboard() {
   const fetchData = async () => {
     try {
       const [bookingsRes, stallsRes, equipmentsRes] = await Promise.all([
-        axios.get("/api/admin/bookings", getAuthHeader()),
-        axios.get("/api/stalls"),
-        axios.get("/api/equipments"),
+        API.get("/api/admin/bookings", getAuthHeader()),
+        API.get("/api/stalls"),
+        API.get("/api/equipments"),
       ]);
       setBookings(bookingsRes.data);
       setStalls(stallsRes.data);
@@ -79,7 +80,7 @@ export default function AdminDashboard() {
         id: stall.id,
         display_order: idx + 1,
       }));
-      await axios.put(
+      await API.put(
         "/api/admin/stalls/reorder",
         { items: reorderedItems },
         getAuthHeader(),
@@ -100,7 +101,7 @@ export default function AdminDashboard() {
       "คุณต้องการอนุมัติการจองนี้ใช่หรือไม่?",
       async () => {
         try {
-          await axios.put(
+          await API.put(
             `/api/admin/bookings/approve/${bookingId}`,
             {},
             getAuthHeader(),
@@ -120,7 +121,7 @@ export default function AdminDashboard() {
       "คุณต้องการยกเลิกการจองนี้ใช่หรือไม่?",
       async () => {
         try {
-          await axios.delete(
+          await API.delete(
             `/api/admin/bookings/${bookingId}`,
             getAuthHeader(),
           );
@@ -158,7 +159,7 @@ export default function AdminDashboard() {
   const handleAddEquipment = async (e) => {
     e.preventDefault();
     try {
-      await axios.post(
+      await API.post(
         "/api/admin/equipments",
         {
           name: newEqName,
@@ -183,7 +184,7 @@ export default function AdminDashboard() {
   const handleDeleteEquipment = (eqId) => {
     showAlert("ยืนยันการลบ", "ต้องการลบอุปกรณ์นี้ใช่หรือไม่?", async () => {
       try {
-        await axios.delete(
+        await API.delete(
           `/api/admin/equipments/${eqId}`,
           getAuthHeader(),
         );
@@ -199,7 +200,7 @@ export default function AdminDashboard() {
     e.preventDefault();
     if (!newStallNumber) return;
     try {
-      await axios.post(
+      await API.post(
         "/api/admin/stalls",
         {
           stall_number: newStallNumber,
@@ -221,7 +222,7 @@ export default function AdminDashboard() {
   const handleDeleteStall = (stallId) => {
     showAlert("ยืนยันการลบ", "ต้องการลบล็อกนี้ใช่หรือไม่?", async () => {
       try {
-        await axios.delete(
+        await API.delete(
           `/api/admin/stalls/${stallId}`,
           getAuthHeader(),
         );
@@ -244,7 +245,7 @@ export default function AdminDashboard() {
     e.preventDefault();
     if (!editStallNumber) return;
     try {
-      await axios.put(
+      await API.put(
         `/api/admin/stalls/${editingStall.id}`,
         {
           stall_number: editStallNumber,
