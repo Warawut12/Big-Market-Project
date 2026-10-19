@@ -8,7 +8,7 @@ const Image = () => {
           <h1>เเผนผังตลาด</h1>
         </div>
         <div className="max-w-380 mx-auto px-10">
-          <img src="img/ex.jpg" alt="market_place" />
+          <img src="/img/ex.jpg" alt="market_place" />
         </div>
       </div>
     </>
