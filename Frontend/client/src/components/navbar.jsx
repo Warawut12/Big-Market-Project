@@ -21,7 +21,7 @@ function Navbar({ isAdmin, setIsAdmin }) {
     e.preventDefault();
     try {
       //  ส่งรหัสผ่านไปตรวจสอบที่ หลังบ้าน
-      const response = await axios.post("http://localhost:5000/api/auth/login", { password });
+      const response = await axios.post("/api/auth/login", { password });
       
       // บันทึก Token ลงใน LocalStorage
       localStorage.setItem("admin_token", response.data.token);

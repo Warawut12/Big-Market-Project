@@ -45,8 +45,8 @@ const Status = () => {
   const fetchStalls = async () => {
     try {
       const [stallsRes, bookingsRes] = await Promise.all([
-        axios.get("http://localhost:5000/api/stalls"),
-        axios.get("http://localhost:5000/api/bookings"),
+        axios.get("/api/stalls"),
+        axios.get("/api/bookings"),
       ]);
       setStalls(stallsRes.data);
       setBookings(bookingsRes.data);
@@ -57,7 +57,7 @@ const Status = () => {
 
   const fetchEquipments = async () => {
     try {
-      const response = await axios.get("http://localhost:5000/api/equipments");
+      const response = await axios.get("/api/equipments");
       setEquipments(response.data);
     } catch (err) {
       console.error("Error fetching equipments:", err);
@@ -303,7 +303,7 @@ const Status = () => {
     setIsSubmitting(true);
 
     try {
-      const response = await axios.post("http://localhost:5000/api/bookings", {
+      const response = await axios.post("/api/bookings", {
         stall_id: selectedStall.id,
         ...formData,
       });
