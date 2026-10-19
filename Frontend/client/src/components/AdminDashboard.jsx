@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import axios from "axios";
 import API from "../../utils/axios";
 
-export default function AdminDashboard() {
+export default function AdminDashboard({ initialSearchQuery = "" }) {
   const [bookings, setBookings] = useState([]);
   const [stalls, setStalls] = useState([]);
 
@@ -21,7 +21,14 @@ export default function AdminDashboard() {
   const [newEqPrice, setNewEqPrice] = useState("");
   const [newEqImage, setNewEqImage] = useState("");
 
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchQuery, setSearchQuery] = useState(initialSearchQuery);
+
+  // อัปเดตค่าช่องค้นหาอัตโนมัติหากมีการส่ง initialSearchQuery เข้ามาใหม่
+  useEffect(() => {
+    if (initialSearchQuery) {
+      setSearchQuery(initialSearchQuery);
+    }
+  }, [initialSearchQuery]);
 
   const [modalInfo, setModalInfo] = useState({
     isOpen: false,
@@ -121,10 +128,7 @@ export default function AdminDashboard() {
       "คุณต้องการยกเลิกการจองนี้ใช่หรือไม่?",
       async () => {
         try {
-          await API.delete(
-            `/api/admin/bookings/${bookingId}`,
-            getAuthHeader(),
-          );
+          await API.delete(`/api/admin/bookings/${bookingId}`, getAuthHeader());
           showAlert("สำเร็จ", "ยกเลิกรายการเรียบร้อย!");
           fetchData();
         } catch (err) {
@@ -184,10 +188,7 @@ export default function AdminDashboard() {
   const handleDeleteEquipment = (eqId) => {
     showAlert("ยืนยันการลบ", "ต้องการลบอุปกรณ์นี้ใช่หรือไม่?", async () => {
       try {
-        await API.delete(
-          `/api/admin/equipments/${eqId}`,
-          getAuthHeader(),
-        );
+        await API.delete(`/api/admin/equipments/${eqId}`, getAuthHeader());
         showAlert("สำเร็จ", "ลบอุปกรณ์สำเร็จ!");
         fetchData();
       } catch (err) {
@@ -222,10 +223,7 @@ export default function AdminDashboard() {
   const handleDeleteStall = (stallId) => {
     showAlert("ยืนยันการลบ", "ต้องการลบล็อกนี้ใช่หรือไม่?", async () => {
       try {
-        await API.delete(
-          `/api/admin/stalls/${stallId}`,
-          getAuthHeader(),
-        );
+        await API.delete(`/api/admin/stalls/${stallId}`, getAuthHeader());
         showAlert("สำเร็จ", "ลบล็อกสำเร็จ!");
         fetchData();
       } catch (err) {
@@ -345,15 +343,20 @@ export default function AdminDashboard() {
     Sunday: "วันอาทิตย์",
   };
 
+  // 🟢 ปรับปรุงเงื่อนไขการค้นหาให้รองรับการค้นหาตาม ID (จากการสแกน QR Code) ด้วย
   const filteredBookings = bookings.filter((item) => {
     const query = searchQuery.toLowerCase();
+    const idStr = item.id ? String(item.id).toLowerCase() : "";
     const name = item.customer_name ? item.customer_name.toLowerCase() : "";
     const phone = item.phone_number ? item.phone_number.toLowerCase() : "";
     const stallNum = item.stalls?.stall_number
       ? item.stalls.stall_number.toLowerCase()
       : "";
     return (
-      name.includes(query) || phone.includes(query) || stallNum.includes(query)
+      idStr === query ||
+      name.includes(query) ||
+      phone.includes(query) ||
+      stallNum.includes(query)
     );
   });
 

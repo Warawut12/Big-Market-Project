@@ -1,15 +1,22 @@
-import { useState } from "react";
-import axios from "axios";
+import { useState, useEffect } from "react";
 import API from "../../utils/axios";
 
-function Navbar({ isAdmin, setIsAdmin }) {
+function Navbar({ isAdmin, setIsAdmin, scannedBookingId }) {
   const [showModal, setShowModal] = useState(false);
   const [password, setPassword] = useState("");
   const [errorMsg, setErrorMsg] = useState("");
 
+  // ถ้าสแกน QR Code มาแต่ยังไม่ล็อกอิน ให้เด้งหน้าต่างใส่รหัสผ่านอัตโนมัติ
+  useEffect(() => {
+    const token = localStorage.getItem("admin_token");
+    if (scannedBookingId && !token && !isAdmin) {
+      setShowModal(true);
+    }
+  }, [scannedBookingId, isAdmin]);
+
   const handleAdminToggle = () => {
     if (isAdmin) {
-      localStorage.removeItem("admin_token"); 
+      localStorage.removeItem("admin_token");
       setIsAdmin(false);
     } else {
       setErrorMsg("");
@@ -21,18 +28,16 @@ function Navbar({ isAdmin, setIsAdmin }) {
   const handleLoginSubmit = async (e) => {
     e.preventDefault();
     try {
-      //  ส่งรหัสผ่านไปตรวจสอบที่ หลังบ้าน
       const response = await API.post("/api/auth/login", { password });
-      
-      // บันทึก Token ลงใน LocalStorage
       localStorage.setItem("admin_token", response.data.token);
-      
       setIsAdmin(true);
       setShowModal(false);
       setPassword("");
       setErrorMsg("");
     } catch (err) {
-      setErrorMsg(err.response?.data?.error || "รหัสผ่านไม่ถูกต้อง กรุณาลองใหม่อีกครั้ง");
+      setErrorMsg(
+        err.response?.data?.error || "รหัสผ่านไม่ถูกต้อง กรุณาลองใหม่อีกครั้ง",
+      );
     }
   };
 
@@ -71,9 +76,7 @@ function Navbar({ isAdmin, setIsAdmin }) {
                     onClick={handleAdminToggle}
                     className="text-white bg-gray-800 hover:bg-gray-900 focus:ring-4 focus:outline-none focus:ring-gray-300 font-medium rounded-lg text-sm px-4 py-2.5 text-center transition"
                   >
-                    {isAdmin
-                      ? "ไปหน้าผู้ใช้ทั่วไป"
-                      : "เข้าสู่ระบบ"}
+                    {isAdmin ? "ไปหน้าผู้ใช้ทั่วไป" : "เข้าสู่ระบบ"}
                   </button>
                 </li>
               </ul>
@@ -86,11 +89,11 @@ function Navbar({ isAdmin, setIsAdmin }) {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden transform transition-all">
             <div className="bg-orange-600 text-white px-6 py-4 flex justify-between items-center">
-              <h3 className="text-lg font-bold">เข้าสู่ระบบ</h3>
+              <h3 className="text-lg font-bold">เข้าสู่ระบบผู้ดูแลระบบ</h3>
               <button
                 type="button"
                 onClick={() => setShowModal(false)}
-                className="text-white hover:text-gray-500 text-2xl font-bold focus:outline-none"
+                className="text-white hover:text-gray-200 text-2xl font-bold focus:outline-none"
               >
                 &times;
               </button>
