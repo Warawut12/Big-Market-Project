@@ -1,6 +1,6 @@
 import { useState } from "react";
 import axios from "axios";
-import API from "../utils/axios";
+import API from "../../utils/axios";
 
 function Navbar({ isAdmin, setIsAdmin }) {
   const [showModal, setShowModal] = useState(false);

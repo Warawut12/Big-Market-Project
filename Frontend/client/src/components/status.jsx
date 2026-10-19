@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import axios from "axios";
 import { QRCodeSVG } from "qrcode.react";
-import API from "../utils/axios";
+import API from "../../utils/axios";
 
 const Status = () => {
   const [stalls, setStalls] = useState([]);
