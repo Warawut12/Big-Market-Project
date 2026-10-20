@@ -65,55 +65,54 @@ const Status = () => {
     }
   };
 
-  // ดึงวัน/วันที่ที่ถูกจองแล้วของล็อกที่เลือก
-  const getDisabledDaysForSelectedStall = (stallId) => {
-    const targetStallId = stallId || (selectedStall ? selectedStall.id : null);
-    if (!targetStallId) return { disabledDaysName: [], disabledDates: [] };
+  const getAvailableDailyOptions = () => {
+    const options = [];
+    const today = new Date();
+    const dayNamesEn = [
+      "Sunday",
+      "Monday",
+      "Tuesday",
+      "Wednesday",
+      "Thursday",
+      "Friday",
+      "Saturday",
+    ];
+    const dayNamesTh = [
+      "อาทิตย์",
+      "จันทร์",
+      "อังคาร",
+      "พุธ",
+      "พฤหัสบดี",
+      "ศุกร์",
+      "เสาร์",
+    ];
 
-    const stallBookings = bookings.filter(
-      (b) =>
-        b.stall_id === targetStallId &&
-        (b.status === "approved" || b.status === "pending"),
-    );
+    for (let i = 0; i < 30; i++) {
+      const d = new Date(today);
+      d.setDate(today.getDate() + i);
 
-    let disabledDaysName = [];
-    let disabledDates = [];
+      const yyyy = d.getFullYear();
+      const mm = String(d.getMonth() + 1).padStart(2, "0");
+      const dd = String(d.getDate()).padStart(2, "0");
+      const dateStr = `${yyyy}-${mm}-${dd}`;
 
-    stallBookings.forEach((b) => {
-      if (b.booking_type === "weekly" || b.booking_type === "monthly") {
-        let days = [];
-        if (Array.isArray(b.selected_days)) days = b.selected_days;
-        else if (typeof b.selected_days === "string") {
-          try {
-            days = JSON.parse(b.selected_days);
-          } catch (e) {}
-        }
-        disabledDaysName = [...disabledDaysName, ...days];
+      const dayOfWeekEn = dayNamesEn[d.getDay()];
+      const dayOfWeekTh = dayNamesTh[d.getDay()];
+
+      const isBookedDaily = disabledDates.includes(dateStr);
+      const isBookedWeeklyMonthly = disabledDaysName.includes(dayOfWeekEn);
+
+      if (!isBookedDaily && !isBookedWeeklyMonthly) {
+        options.push({
+          dateStr,
+          label: `วัน${dayOfWeekTh}ที่ ${dd}/${mm}/${yyyy}`,
+        });
       }
-
-      if (b.booking_type === "daily" && b.booking_date) {
-        disabledDates.push(b.booking_date);
-        const dateObj = new Date(b.booking_date);
-        const dayNames = [
-          "Sunday",
-          "Monday",
-          "Tuesday",
-          "Wednesday",
-          "Thursday",
-          "Friday",
-          "Saturday",
-        ];
-        disabledDaysName.push(dayNames[dateObj.getDay()]);
-      }
-    });
-
-    return {
-      disabledDaysName: [...new Set(disabledDaysName)],
-      disabledDates: [...new Set(disabledDates)],
-    };
+    }
+    return options;
   };
 
-  const { disabledDaysName } = getDisabledDaysForSelectedStall();
+  const availableDailyOptions = getAvailableDailyOptions();
 
   // 🟢 ปรับปรุงใหม่: ดึงช่วงเวลาที่ถูกจองแล้วของล็อกนี้มาปิดไม่ให้เลือกทันที
   const getDisabledHours = () => {
@@ -339,7 +338,9 @@ const Status = () => {
     if (!svgElement) return;
 
     const svgData = new XMLSerializer().serializeToString(svgElement);
-    const svgBlob = new Blob([svgData], { type: "image/svg+xml;charset=utf-8" });
+    const svgBlob = new Blob([svgData], {
+      type: "image/svg+xml;charset=utf-8",
+    });
     const svgUrl = URL.createObjectURL(svgBlob);
 
     const downloadLink = document.createElement("a");
