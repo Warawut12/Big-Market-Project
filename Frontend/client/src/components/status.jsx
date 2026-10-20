@@ -113,13 +113,45 @@ const Status = () => {
     };
   };
 
-  const { disabledDaysName } = getDisabledDaysForSelectedStall();
+  const { disabledDaysName, disabledDates } = getDisabledDaysForSelectedStall();
 
-  // 🟢 ปรับปรุงใหม่: ดึงช่วงเวลาที่ถูกจองแล้วของล็อกนี้มาปิดไม่ให้เลือกทันที
+  // 🟢 สร้างรายการวันที่ว่างล่วงหน้า 7 วัน สำหรับเลือกแบบง่าย
+  const getAvailableDailyOptions = () => {
+    const options = [];
+    const today = new Date();
+    const thaiDays = ["อาทิตย์", "จันทร์", "อังคาร", "พุธ", "พฤหัสบดี", "ศุกร์", "เสาร์"];
+
+    for (let i = 0; i < 7; i++) {
+      const d = new Date(today);
+      d.setDate(today.getDate() + i);
+      const dateStr = d.toISOString().split("T")[0]; // YYYY-MM-DD
+      
+      // ถ้าวันที่นี้ถูกจองแบบรายวันไปแล้ว ข้ามไป
+      if (disabledDates.includes(dateStr)) continue;
+
+      const dayNameTh = thaiDays[d.getDay()];
+      const dayNameEn = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"][d.getDay()];
+      
+      // ถ้าวันในสัปดาห์นี้ติดติดภาระจองแบบ weekly/monthly เต็ม อาจจะเช็กเพิ่มเติมได้ แต่เบื้องต้นแสดงตามวันที่ไม่ซ้ำ
+      const formattedDate = d.toLocaleDateString("th-TH", {
+        year: "numeric",
+        month: "long",
+        numeric: "numeric",
+        day: "numeric",
+      });
+
+      options.push({
+        dateStr,
+        label: `${dayNameTh} (${formattedDate})`,
+      });
+    }
+    return options;
+  };
+
+  const availableDailyOptions = getAvailableDailyOptions();
+
   const getDisabledHours = () => {
     if (!selectedStall) return [];
-
-    // ดึงการจองทั้งหมดที่อนุมัติแล้วหรือรออนุมัติของล็อกนี้
     const targetBookings = bookings.filter(
       (b) =>
         b.stall_id === selectedStall.id &&
@@ -128,11 +160,14 @@ const Status = () => {
 
     const occupiedHours = new Set();
     targetBookings.forEach((b) => {
-      if (b.time_start && b.time_end) {
-        const startH = parseInt(b.time_start.split(":")[0], 10);
-        const endH = parseInt(b.time_end.split(":")[0], 10);
-        for (let h = startH; h < endH; h++) {
-          occupiedHours.add(h);
+      // ถ้าเป็นรายวัน และตรงกับวันที่เลือก ถึงจะนำเวลามาปิด
+      if (b.booking_type === "daily" && b.booking_date === formData.booking_date) {
+        if (b.time_start && b.time_end) {
+          const startH = parseInt(b.time_start.split(":")[0], 10);
+          const endH = parseInt(b.time_end.split(":")[0], 10);
+          for (let h = startH; h < endH; h++) {
+            occupiedHours.add(h);
+          }
         }
       }
     });
@@ -157,57 +192,9 @@ const Status = () => {
       };
     }
 
-    const hours = [9, 10, 11, 12, 13, 14, 15, 16, 17];
-    const occupiedHours = new Set();
-
-    activeBookings.forEach((b) => {
-      if (b.time_start && b.time_end) {
-        const startH = parseInt(b.time_start.split(":")[0], 10);
-        const endH = parseInt(b.time_end.split(":")[0], 10);
-        for (let h = startH; h < endH; h++) {
-          occupiedHours.add(h);
-        }
-      }
-    });
-
-    const freeHours = hours.filter((h) => !occupiedHours.has(h));
-
-    if (freeHours.length === 0) {
-      return {
-        isFullyBooked: true,
-        freeTimeText: "ถูกจองเต็มทุกช่วงเวลาแล้ว",
-        hasFreeTime: false,
-      };
-    }
-
-    let timeRanges = [];
-    let startRange = null;
-    let endRange = null;
-
-    freeHours.forEach((h, idx) => {
-      if (startRange === null) {
-        startRange = h;
-        endRange = h + 1;
-      } else if (h === endRange) {
-        endRange = h + 1;
-      } else {
-        timeRanges.push(
-          `${String(startRange).padStart(2, "0")}:00 - ${String(endRange).padStart(2, "0")}:00`,
-        );
-        startRange = h;
-        endRange = h + 1;
-      }
-
-      if (idx === freeHours.length - 1) {
-        timeRanges.push(
-          `${String(startRange).padStart(2, "0")}:00 - ${String(endRange).padStart(2, "0")}:00`,
-        );
-      }
-    });
-
     return {
       isFullyBooked: false,
-      freeTimeText: `ช่วงเวลาที่ว่าง: ${timeRanges.join(", ")}`,
+      freeTimeText: "เปิดให้จองช่วงเวลา",
       hasFreeTime: true,
     };
   };
@@ -496,26 +483,38 @@ const Status = () => {
                   </select>
                 </div>
 
+                {/* 🟢 ส่วนเลือกวันที่ต้องการจองแบบรายการกดเลือกง่ายๆ */}
                 {formData.booking_type === "daily" && (
                   <div>
-                    <label className="block text-xs font-medium mb-1">
-                      วันที่ต้องการจอง *
+                    <label className="block text-base font-semibold text-gray-800 mb-2">
+                      วันที่ต้องการจอง * (กดเลือกวันที่ต้องการ)
                     </label>
-                    <input
-                      type="date"
-                      name="booking_date"
-                      required
-                      value={formData.booking_date}
-                      onChange={(e) => {
-                        handleChange(e);
-                        setFormData((prev) => ({
-                          ...prev,
-                          time_start: "",
-                          time_end: "",
-                        }));
-                      }}
-                      className="w-full border rounded p-2.5 text-sm"
-                    />
+                    {availableDailyOptions.length > 0 ? (
+                      <div className="flex flex-col gap-2 max-h-64 overflow-y-auto p-1 bg-gray-50 border border-gray-200 rounded-xl">
+                        {availableDailyOptions.map((opt) => {
+                          const isSelected = formData.booking_date === opt.dateStr;
+                          return (
+                            <button
+                              key={opt.dateStr}
+                              type="button"
+                              onClick={() => setFormData({ ...formData, booking_date: opt.dateStr })}
+                              className={`w-full flex items-center justify-between p-3.5 rounded-xl border-2 text-left font-bold transition-all text-base ${
+                                isSelected
+                                  ? "border-orange-600 bg-orange-50 text-orange-600 shadow-md"
+                                  : "border-gray-200 bg-white text-gray-700 hover:border-orange-300 active:bg-gray-100"
+                              }`}
+                            >
+                              <span>{opt.label}</span>
+                              {isSelected && <span className="text-xl font-extrabold text-orange-600">✓</span>}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    ) : (
+                      <p className="text-sm text-red-500 font-medium p-3 bg-red-50 border border-red-200 rounded-lg text-center">
+                        ไม่มีวันที่ว่างสำหรับการจองรายวันในขณะนี้
+                      </p>
+                    )}
                   </div>
                 )}
 
@@ -541,7 +540,7 @@ const Status = () => {
                         return (
                           <label
                             key={dayObj.en}
-                            class={`flex items-center space-x-2 text-xs ${
+                            className={`flex items-center space-x-2 text-xs ${
                               isAlreadyBooked
                                 ? "cursor-not-allowed opacity-50 text-gray-400"
                                 : "cursor-pointer"
@@ -574,7 +573,7 @@ const Status = () => {
                   </div>
                 )}
 
-                {/* 🟢 ส่วนเลือกเวลาเริ่มต้นและเวลาจบ (ปิดทับช่วงเวลาที่ถูกจองแล้วอัตโนมัติ) */}
+                {/* ส่วนเลือกเวลาเริ่มต้นและเวลาจบ */}
                 <div className="grid grid-cols-2 gap-2">
                   <div>
                     <label className="block text-xs font-medium mb-1">
@@ -636,7 +635,6 @@ const Status = () => {
                         const startHour = formData.time_start
                           ? parseInt(formData.time_start.split(":")[0], 10)
                           : 0;
-                        // ปิดไม่ให้เลือกเวลาจบที่น้อยกว่าหรือเท่ากับเวลาเริ่ม หรือชนกับช่วงเวลาที่ถูกจองไปแล้ว
                         const isDisabled =
                           hour <= startHour ||
                           (formData.time_start &&
@@ -875,7 +873,6 @@ const Status = () => {
               />
             </div>
 
-            {/* 🟢 เพิ่มปุ่มดาวน์โหลด QR Code กลับเข้ามาตรงนี้ */}
             <div className="flex flex-col gap-2">
               <button
                 type="button"
