@@ -5,7 +5,7 @@ import Info from "./components/info";
 import Navbar from "./components/navbar";
 import Status from "./components/status";
 import Footer from "./components/footer";
-import API from "./utils/axios";
+import API from "../utils/axios";
 
 const App = () => {
   const [isAdmin, setIsAdmin] = useState(false);
