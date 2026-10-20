@@ -6,10 +6,9 @@ function Navbar({ isAdmin, setIsAdmin, scannedBookingId }) {
   const [password, setPassword] = useState("");
   const [errorMsg, setErrorMsg] = useState("");
 
-  // ถ้าสแกน QR Code มาแต่ยังไม่ล็อกอิน ให้เด้งหน้าต่างใส่รหัสผ่านอัตโนมัติ
   useEffect(() => {
     const token = localStorage.getItem("admin_token");
-    if (scannedBookingId && !token && !isAdmin) {
+    if (scannedBookingId && (!token || !isAdmin)) {
       setShowModal(true);
     }
   }, [scannedBookingId, isAdmin]);

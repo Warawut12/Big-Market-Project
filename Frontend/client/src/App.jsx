@@ -5,21 +5,33 @@ import Info from "./components/info";
 import Navbar from "./components/navbar";
 import Status from "./components/status";
 import Footer from "./components/footer";
+import API from "./utils/axios";
 
 const App = () => {
   const [isAdmin, setIsAdmin] = useState(false);
   const [scannedBookingId, setScannedBookingId] = useState("");
 
   useEffect(() => {
-    // อ่านค่า booking_id จาก URL (เช่น ?booking_id=123) เมื่อสแกน QR Code
     const urlParams = new URLSearchParams(window.location.search);
     const bookingIdFromUrl = urlParams.get("booking_id");
 
     if (bookingIdFromUrl) {
       setScannedBookingId(bookingIdFromUrl);
       const token = localStorage.getItem("admin_token");
+
       if (token) {
-        setIsAdmin(true);
+        API.get("/api/admin/bookings", {
+          headers: { Authorization: `Bearer ${token}` }
+        })
+          .then(() => {
+            
+            setIsAdmin(true);
+          })
+          .catch(() => {
+            
+            localStorage.removeItem("admin_token");
+            setIsAdmin(false);
+          });
       }
     }
   }, []);
