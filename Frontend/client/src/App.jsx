@@ -20,15 +20,16 @@ const App = () => {
       const token = localStorage.getItem("admin_token");
 
       if (token) {
+        // ทดสอบยิง API เช็กว่า Token ยังใช้งานได้อยู่หรือไม่ (ไม่หมดอายุ)
         API.get("/api/admin/bookings", {
           headers: { Authorization: `Bearer ${token}` }
         })
           .then(() => {
-            
+            // ถ้า Token ยังใช้ได้ ให้เข้าหน้า Admin ทันที
             setIsAdmin(true);
           })
           .catch(() => {
-            
+            // ถ้า Token หมดอายุหรือไม่ถูกต้อง ให้เคลียร์ทิ้ง และปล่อยให้ Navbar เปิดหน้า Login
             localStorage.removeItem("admin_token");
             setIsAdmin(false);
           });
