@@ -333,34 +333,22 @@ const Status = () => {
     }
   };
 
-  // 🟢 ฟังก์ชันสำหรับแปลง QR Code SVG เป็นรูปภาพ PNG แล้วดาวน์โหลดลงเครื่อง
   const downloadQR = () => {
     if (!qrRef.current) return;
     const svgElement = qrRef.current.querySelector("svg");
     if (!svgElement) return;
 
     const svgData = new XMLSerializer().serializeToString(svgElement);
-    const canvas = document.createElement("canvas");
-    const ctx = canvas.getContext("2d");
-    const img = new Image();
+    const svgBlob = new Blob([svgData], { type: "image/svg+xml;charset=utf-8" });
+    const svgUrl = URL.createObjectURL(svgBlob);
 
-    img.onload = () => {
-      canvas.width = img.width;
-      canvas.height = img.height;
-      ctx.drawImage(img, 0, 0);
-      const pngFile = canvas.toDataURL("image/png");
-
-      const downloadLink = document.createElement("a");
-      downloadLink.href = pngFile;
-      downloadLink.download = `QR_Booking_${createdBookingId || "stall"}.png`;
-      document.body.appendChild(downloadLink);
-      downloadLink.click();
-      document.body.removeChild(downloadLink);
-    };
-
-    img.src =
-      "data:image/svg+xml;base64," +
-      btoa(unescape(encodeURIComponent(svgData)));
+    const downloadLink = document.createElement("a");
+    downloadLink.href = svgUrl;
+    downloadLink.download = `QR_Booking_${createdBookingId || "stall"}.svg`;
+    document.body.appendChild(downloadLink);
+    downloadLink.click();
+    document.body.removeChild(downloadLink);
+    URL.revokeObjectURL(svgUrl);
   };
 
   const translateDays = (days) => {
