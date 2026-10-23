@@ -55,7 +55,7 @@ function Navbar({ isAdmin, setIsAdmin, scannedBookingId }) {
               className="flex items-center space-x-3 rtl:space-x-reverse py-2"
             >
               <span className="self-center text-2xl md:text-3xl text-heading font-semibold whitespace-nowrap text-orange-600">
-                ตลาดนัดตรีสุข
+                ตลาด
               </span>
             </a>
             

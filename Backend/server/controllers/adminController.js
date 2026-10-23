@@ -182,7 +182,7 @@ exports.createStall = async (req, res) => {
       .insert([
         {
           stall_number,
-          description: description || "ล็อกตลาดตรีสุข",
+          description: description || "ล็อกตลาด",
           price: price || 0,
           status: "available",
           display_order: nextOrder,

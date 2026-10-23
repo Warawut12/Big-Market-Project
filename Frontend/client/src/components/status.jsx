@@ -1,5 +1,4 @@
 import { useState, useEffect, useRef } from "react";
-import axios from "axios";
 import { QRCodeSVG } from "qrcode.react";
 import API from "../../utils/axios";
 
@@ -65,7 +64,6 @@ const Status = () => {
     }
   };
 
-  // ดึงวัน/วันที่ที่ถูกจองแล้วของล็อกที่เลือก
   const getDisabledDaysForSelectedStall = (stallId) => {
     const targetStallId = stallId || (selectedStall ? selectedStall.id : null);
     if (!targetStallId) return { disabledDaysName: [], disabledDates: [] };
@@ -115,7 +113,7 @@ const Status = () => {
 
   const { disabledDaysName, disabledDates } = getDisabledDaysForSelectedStall();
 
-  // 🟢 สร้างรายการวันที่ว่างล่วงหน้า 7 วัน สำหรับเลือกแบบง่าย
+  
   const getAvailableDailyOptions = () => {
     const options = [];
     const today = new Date();
@@ -126,13 +124,13 @@ const Status = () => {
       d.setDate(today.getDate() + i);
       const dateStr = d.toISOString().split("T")[0]; // YYYY-MM-DD
       
-      // ถ้าวันที่นี้ถูกจองแบบรายวันไปแล้ว ข้ามไป
+      
       if (disabledDates.includes(dateStr)) continue;
 
       const dayNameTh = thaiDays[d.getDay()];
       const dayNameEn = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"][d.getDay()];
       
-      // ถ้าวันในสัปดาห์นี้ติดติดภาระจองแบบ weekly/monthly เต็ม อาจจะเช็กเพิ่มเติมได้ แต่เบื้องต้นแสดงตามวันที่ไม่ซ้ำ
+      
       const formattedDate = d.toLocaleDateString("th-TH", {
         year: "numeric",
         month: "long",
@@ -160,7 +158,7 @@ const Status = () => {
 
     const occupiedHours = new Set();
     targetBookings.forEach((b) => {
-      // ถ้าเป็นรายวัน และตรงกับวันที่เลือก ถึงจะนำเวลามาปิด
+     
       if (b.booking_type === "daily" && b.booking_date === formData.booking_date) {
         if (b.time_start && b.time_end) {
           const startH = parseInt(b.time_start.split(":")[0], 10);
@@ -378,7 +376,7 @@ const Status = () => {
                     </td>
                     <td className="p-3 border">
                       <p className="font-semibold text-gray-800">
-                        {stall.description || "ล็อกตลาดตรีสุข"}
+                        {stall.description || "ล็อกตลาด"}
                       </p>
                       <p className="text-orange-600 font-bold mt-1">
                         ราคาค่าเช่า: {stall.price || 0} บาท
@@ -483,7 +481,7 @@ const Status = () => {
                   </select>
                 </div>
 
-                {/* 🟢 ส่วนเลือกวันที่ต้องการจองแบบรายการกดเลือกง่ายๆ */}
+                
                 {formData.booking_type === "daily" && (
                   <div>
                     <label className="block text-base font-semibold text-gray-800 mb-2">
@@ -573,7 +571,7 @@ const Status = () => {
                   </div>
                 )}
 
-                {/* ส่วนเลือกเวลาเริ่มต้นและเวลาจบ */}
+                =
                 <div className="grid grid-cols-2 gap-2">
                   <div>
                     <label className="block text-xs font-medium mb-1">
