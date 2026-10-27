@@ -468,7 +468,7 @@ export default function AdminDashboard({ initialSearchQuery = "" }) {
           </p>
         </td>
 
-        <td className="p-3 border space-x-1 min-w-[120px]">
+        <td className="p-3 border space-x-1 min-w-30">
           {item.status === "pending" && (
             <button
               onClick={() => handleApproveBooking(item.id)}
