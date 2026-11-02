@@ -7,7 +7,7 @@ const Info = () => {
         ยินดีต้อนรับเข้าเว็บจองล็อกตลาด
       </h1>
       <h1 className="text-4xl text-red-600 mt-10 mb-5">*กฏของตลาดตลาด*</h1>
-      <h2 className="text-black/70 mb-10">Lorem ipsum dolor sit, amet consectetur adipisicing elit. In corrupti, quisquam obcaecati nemo harum molestiae molestias? Cumque quod eligendi, modi esse alias quae suscipit reiciendis. Quidem qui repellendus eveniet magnam aliquam harum suscipit voluptatem adipisci ipsa, illo reprehenderit tempora quod eaque blanditiis obcaecati dolor labore. Sed natus voluptatibus molestias modi!</h2>
+      <h2 className="text-black/70 mb-10">.....</h2>
       <p className="mb-6 text-lg font-normal text-gray-1000 lg:text-xl sm:px-16 xl:px-48">
         เพื่อความสะดวกสบายในการจองเเละเข้าใช้บริการ
       </p>
